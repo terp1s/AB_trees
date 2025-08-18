@@ -1,10 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Version>1.0.1</Version>  
+    <PackageId>ABTree</PackageId>
+    <Title>AB Tree library</Title>
+    <Authors>Tereza Písková</Authors>
+    <BaseOutputPath>C:\Users\pisko\Documents\NuGet</BaseOutputPath>
   </PropertyGroup>
 
 </Project>

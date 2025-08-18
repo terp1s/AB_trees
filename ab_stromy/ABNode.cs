@@ -1,9 +1,10 @@
 ﻿using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Xml.Linq;
+using System.Threading.Channels;
 
 namespace ab_stromy
 {
-    class ABNode<TKey> where TKey : IComparable<TKey>
+    public class ABNode<TKey> where TKey : IComparable<TKey>
     {
         private ABNode<TKey>[] children;
         private ABNode<TKey> parent;
@@ -31,6 +32,8 @@ namespace ab_stromy
         internal ABNode<TKey> GetChild(int index) => children[index];
         internal ABNode<TKey> GetParent() => parent;
 
+        internal ABNode<TKey>[] GetChildren() => children;
+
         internal void Overflow()
         {
             int half = (b - 1) / 2;
@@ -50,30 +53,22 @@ namespace ab_stromy
 
             while (i < n)
             {
-                
                 newNode.keys[i - half - 1] = keys[i];
-
-                if (!IsLeaf)
-                {
-                    newNode.children[i - half] = children[i];
-                    children[i].parent = newNode;
-                }
-                
                 newNode.n++;
                 i++;
             }
+
 
             if (!IsLeaf)
             {
                 i = half + 1;
 
-                while (i < n)
+                while (i < n + 1)
                 {
-                    newNode.children[i - half] = children[i];
+                    newNode.children[i - half - 1] = children[i];
                     children[i].parent = newNode;
+                    i++;
                 }
-
-                newNode.children[n] = children[n];
             }
 
             this.n = half;
@@ -86,6 +81,22 @@ namespace ab_stromy
 
             parent.InsertKey(TraverseUp, this, newNode);
         }
+
+        internal void Print()
+        {
+            Console.Write('|');
+
+            for (int i = 0; i < KeyCount - 1; i++)
+            {
+                Console.Write(keys[i]);
+                Console.Write(' ');
+            }
+            Console.Write(keys[KeyCount - 1]);
+
+            Console.Write('|');
+        }
+
+        
 
         internal void InsertKey(TKey key, ABNode<TKey> leftChild, ABNode<TKey> rightChild)
         {
@@ -114,9 +125,9 @@ namespace ab_stromy
 
             int index = FindClosestIndex(key);
 
-            for (int i = n - 1; i >= index; i--)
+            for (int i = n; i > index; i--)
             {
-                this.keys[i + 1] = keys[i];
+                this.keys[i] = keys[i - 1];
 
                 if (!IsLeaf)
                 {
@@ -188,10 +199,8 @@ namespace ab_stromy
             return i;
         }
 
-        internal void Underflow()
+        internal void Underflow(int indexInParent)
         {
-            int indexInParent = parent.FindClosestIndex(keys[0]);
-
             if(indexInParent > 0) //a left brother exists
             {
                 ABNode<TKey> leftBrother = parent.GetChild(indexInParent - 1);
@@ -202,7 +211,7 @@ namespace ab_stromy
                 }
                 else
                 {
-                    BorrowKeyFromLeft(leftBrother);
+                    BorrowKeyFromLeft(leftBrother, indexInParent);
                 }
             } 
             else if (indexInParent <= n) //a right brother exists
@@ -215,14 +224,13 @@ namespace ab_stromy
                 }
                 else
                 {
-                    BorrowKeyFromRight(rightBrother);
+                    BorrowKeyFromRight(rightBrother, indexInParent);
                 }
             }
         }
 
-        internal void BorrowKeyFromLeft(ABNode<TKey> leftBrother)
+        internal void BorrowKeyFromLeft(ABNode<TKey> leftBrother, int indexInParent)
         {
-            int indexInParent = parent.FindClosestIndex(keys[0]);
             TKey brotherKey = leftBrother.GetKeyRef(leftBrother.KeyCount - 1);
             TKey parentKey = parent.GetKeyRef(indexInParent - 1);
 
@@ -238,9 +246,8 @@ namespace ab_stromy
             n++;
         }
 
-        internal void BorrowKeyFromRight(ABNode<TKey> rightBrother)
+        internal void BorrowKeyFromRight(ABNode<TKey> rightBrother, int indexInParent)
         {
-            int indexInParent = FindClosestIndex(keys[0]);
             TKey brotherKey = rightBrother.GetKeyRef(0);
             TKey parentKey = parent.GetKeyRef(indexInParent);
 
@@ -258,7 +265,7 @@ namespace ab_stromy
 
         internal void MergeWithLeftBrother(int indexInParent, ABNode<TKey> leftBrother)
         {
-            TKey parentKey = parent.GetKeyRef(indexInParent);
+            TKey parentKey = parent.GetKeyRef(indexInParent - 1);
 
             ABNode<TKey> newNode = MergeNodes(leftBrother, this, parentKey);
            
@@ -278,23 +285,34 @@ namespace ab_stromy
         {
             ABNode<TKey> merged = new ABNode<TKey>(a, b);
 
+            if (firstNode.IsLeaf) { merged.leaf = true;}
+
             for (int i = 0; i < firstNode.KeyCount; i++)
             {
                 merged.keys[i] = firstNode.keys[i];
                 merged.children[i] = firstNode.children[i];
             }
 
+            merged.children[firstNode.KeyCount] = firstNode.children[firstNode.KeyCount];
             merged.keys[firstNode.KeyCount] = middleValue;
 
             for (int i = 0; i < secondNode.KeyCount; i++)
             {
                 merged.keys[i + firstNode.KeyCount + 1] = secondNode.keys[i];
-                merged.children[i + firstNode.KeyCount] = secondNode.children[i];
+                merged.children[i + firstNode.KeyCount + 1] = secondNode.children[i];
             }
 
-            merged.children[secondNode.KeyCount + firstNode.KeyCount + 1] = children[firstNode.KeyCount];
+            merged.children[secondNode.KeyCount + firstNode.KeyCount + 1] = secondNode.children[secondNode.KeyCount];
 
             merged.n = firstNode.KeyCount + secondNode.KeyCount + 1;
+
+            for(int i = 0; i <= merged.n; i++)
+            {
+                if(merged.children[i] != null)
+                {
+                    merged.children[i].parent = merged;
+                }
+            }
 
             return merged;
         }
