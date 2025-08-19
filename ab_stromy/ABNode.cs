@@ -1,320 +1,333 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Xml.Linq;
-using System.Threading.Channels;
+﻿
 
 namespace ab_stromy
 {
+    /// <summary>
+    /// node of an (a,b)-tree
+    /// </summary>
+    /// <typeparam name="TKey">data type of keys</typeparam>
     public class ABNode<TKey> where TKey : IComparable<TKey>
     {
-        private ABNode<TKey>[] children;
-        private ABNode<TKey> parent;
-        private TKey[] keys;
-        private int n { get; set; }
-        private int a;
-        private int b;
-        internal bool leaf;
+        private readonly ABNode<TKey>[] _children;
+        private readonly TKey[] _keys;
+        private int _keyCount;
+        private readonly int a;
+        private readonly int b;
+
+        internal ABNode<TKey> Parent { get; set; }
+        internal bool IsLeaf { get; set; }
 
 
-        public ABNode(int a, int b)
+        /// <summary>
+        /// constructor
+        /// </summary>
+        /// <param name="minChildren">minimum amount of children</param>
+        /// <param name="maxChildren">maximum amount of children</param>
+        /// <param name="isLeaf"></param>
+        internal ABNode(int minChildren, int maxChildren, bool isLeaf)
         {
-            this.a = a;
-            this.b = b;
-            children = new ABNode<TKey>[b + 1];
-            keys = new TKey[b];
+            a = minChildren;
+            b = maxChildren;
+            _children = new ABNode<TKey>[maxChildren + 1];
+            _keys = new TKey[maxChildren];
+            IsLeaf = isLeaf;
         }
 
-        internal TKey[] GetKeys() => keys;
-        internal ref TKey GetKeyRef(int index) => ref keys[index];
-        internal int KeyCount => n;
-        internal bool IsLeaf => leaf;
-        internal bool Overflowed => n > b - 1;
-        internal bool Underflowed => n < a - 1;
-        internal ABNode<TKey> GetChild(int index) => children[index];
-        internal ABNode<TKey> GetParent() => parent;
+        internal int KeyCount => _keyCount;
+        internal bool Overflowed => _keyCount > b - 1;
+        internal bool Underflowed => _keyCount < a - 1;
 
-        internal ABNode<TKey>[] GetChildren() => children;
+        internal TKey[] Keys => _keys;
+        internal ref TKey GetKeyRef(int index) => ref _keys[index];
+        internal ABNode<TKey> GetChild(int index) => _children[index];
+        internal ABNode<TKey>[] Children => _children;
 
+        /// <summary>
+        /// handles node overflowing - amount of children exceeds b
+        /// splits node in half and propagates key upwards, until nodes stop overflowing or a new root is created
+        /// </summary>
         internal void Overflow()
         {
             int half = (b - 1) / 2;
-            TKey TraverseUp = keys[half];
-            ABNode<TKey> newNode = new ABNode<TKey>(a, b);
+            TKey promotedKey = _keys[half];
+            ABNode<TKey> rightNode = SplitRightHalf(half);
 
-            if (IsLeaf)
+         
+            if (Parent == null)
             {
-                newNode.leaf = true;
-            }
-            else
-            {
-                newNode.leaf = false;
+                Parent = new ABNode<TKey>(a, b, false);
             }
 
-            int i = half + 1;
+            Parent.InsertKey(promotedKey, this, rightNode);
+        }
 
-            while (i < n)
+        /// <summary>
+        /// splits node in half, including children, if it has any
+        /// </summary>
+        /// <param name="splitIndex">index where node is to be split</param>
+        /// <returns>node that contains the second "half" of the given node</returns>
+        private ABNode<TKey> SplitRightHalf(int splitIndex)
+        {
+            var newNode = new ABNode<TKey>(a, b, IsLeaf);
+
+            for (int i = splitIndex + 1; i < _keyCount; i++)
             {
-                newNode.keys[i - half - 1] = keys[i];
-                newNode.n++;
-                i++;
+                newNode._keys[i - splitIndex - 1] = _keys[i];
+                newNode._keyCount++;
             }
-
 
             if (!IsLeaf)
             {
-                i = half + 1;
-
-                while (i < n + 1)
+                for (int i = splitIndex + 1; i < _keyCount + 1; i++)
                 {
-                    newNode.children[i - half - 1] = children[i];
-                    children[i].parent = newNode;
-                    i++;
+                    newNode._children[i - splitIndex - 1] = _children[i];
+                    if (_children[i] != null) _children[i].Parent = newNode;
                 }
             }
 
-            this.n = half;
-
-            if (parent == null)
-            {
-                parent = new ABNode<TKey>(a, b);
-                parent.leaf = false;
-            }
-
-            parent.InsertKey(TraverseUp, this, newNode);
+            _keyCount = splitIndex;
+            return newNode;
         }
 
+        /// <summary>
+        /// prints keys of a node, seperated by a space
+        /// example of a printed key: |5 10|
+        /// </summary>
         internal void Print()
         {
             Console.Write('|');
 
             for (int i = 0; i < KeyCount - 1; i++)
             {
-                Console.Write(keys[i]);
+                Console.Write(_keys[i]);
                 Console.Write(' ');
             }
-            Console.Write(keys[KeyCount - 1]);
+
+            Console.Write(_keys[KeyCount - 1]);
 
             Console.Write('|');
         }
 
-        
-
+        /// <summary>
+        /// inserts key into a node
+        /// </summary>
+        /// <param name="key">key to be inserted</param>
+        /// <param name="leftChild">new left child of the key</param>
+        /// <param name="rightChild">new right child of the key</param>
         internal void InsertKey(TKey key, ABNode<TKey> leftChild, ABNode<TKey> rightChild)
         {
-            
-            if (n == 0)
+            if(_keyCount == 0)
             {
-                n = 1;
-                keys[0] = key;
+                _keys[0] = key;
+                _children[0] = leftChild;
+                _children[1] = rightChild;
+                _keyCount = 1;
 
-                children[0] = leftChild;
-                children[1] = rightChild;
-
-                if(leftChild != null)
-                {
-                    leftChild.parent = this;
-                }
-
-                if(rightChild != null)
-                {
-                    rightChild.parent = this;
-                }
-
+                if (leftChild != null) leftChild.Parent = this;
+                if (rightChild != null) rightChild.Parent = this;
+                IsLeaf = leftChild == null && rightChild == null;
                 return;
             }
-            
 
             int index = FindClosestIndex(key);
 
-            for (int i = n; i > index; i--)
+            for (int i = _keyCount; i > index; i--)
             {
-                this.keys[i] = keys[i - 1];
+                _keys[i] = _keys[i - 1];
 
                 if (!IsLeaf)
                 {
-                    this.children[i + 1] = this.children[i];
+                    _children[i + 1] = _children[i];
                 }
 
             }
 
-            this.keys[index] = key;
+            _keys[index] = key;
 
             if (!IsLeaf)
             {
-                this.children[index] = leftChild;
-                this.children[index + 1] = rightChild;
-
-                if (leftChild != null)
-                {
-                    leftChild.parent = this;
-                }
-
-                if (rightChild != null)
-                {
-                    rightChild.parent = this;
-                }
+                _children[index] = leftChild;
+                _children[index + 1] = rightChild;
+                if (leftChild != null) leftChild.Parent = this;
+                if (rightChild != null) rightChild.Parent = this;
             }
-            
-            n++;
+
+            _keyCount++;
         }
         
+        /// <summary>
+        /// deletes key from node
+        /// </summary>
+        /// <param name="key">key to delete</param>
+        /// <param name="newNode">new child to replace two children associated with the deleted node</param>
         internal void DeleteKey(TKey key, ABNode<TKey> newNode)
         {
             int index = FindClosestIndex(key);
+            if (index >= _keyCount || !_keys[index].Equals(key)) return; //key not in node
 
-            if (!keys[index].Equals(key))
+            for (int i = index; i < _keyCount - 1; i++)
             {
-                return; // key not in node
+                _keys[i] = _keys[i + 1];
             }
 
-            int i = index;
-
-            while (i < n - 1) //move keys backwards
+            if (!IsLeaf)
             {
-                keys[i] = keys[i + 1];
-                i++;
-            }
+                _children[index] = newNode;
+                if (newNode != null) newNode.Parent = this;
 
-            if (!IsLeaf) //move children as well, if they exist
-            {
-                children[index] = newNode;
-                newNode.parent = this;
-
-                i = index + 1;
-
-                while (i < n)
+                for (int i = index + 1; i < _keyCount; i++)
                 {
-                    children[i] = children[i + 1];
-                    i++;
+                    _children[i] = _children[i + 1];
                 }
             }
 
-            n--;
+            _keyCount--;
         }
+
+        /// <summary>
+        /// finds either index where given key is, or should be, depending if it is in the node or not.
+        /// </summary>
+        /// <param name="key">key to be found</param>
+        /// <returns>index of the supposed place of the key</returns>
         internal int FindClosestIndex(TKey key)
         {
             int i = 0;
-
-            while (key.CompareTo(keys[i]) > 0 && i < KeyCount) { i++; }
-
+            while (i < _keyCount && key.CompareTo(_keys[i]) > 0)
+                i++;
             return i;
         }
 
-        internal void Underflow(int indexInParent)
+        /// <summary>
+        /// handles underflowing of a key - node has less children than a
+        /// </summary>
+        /// <param name="indexInParent">index in Parent.Children that leads to this node</param>
+        internal void HandleUnderflow(int indexInParent)
         {
             if(indexInParent > 0) //a left brother exists
             {
-                ABNode<TKey> leftBrother = parent.GetChild(indexInParent - 1);
-
-                if(leftBrother.KeyCount == a - 1) //cannot borrow key from brother, as it will underflow
-                {
-                    MergeWithLeftBrother(indexInParent, leftBrother);
-                }
-                else
-                {
-                    BorrowKeyFromLeft(leftBrother, indexInParent);
-                }
+                HandleUnderflowWithLeftSibling(indexInParent);
             } 
-            else if (indexInParent <= n) //a right brother exists
+            else if (indexInParent <= _keyCount) //a right brother exists
             {
-                ABNode<TKey> rightBrother = parent.GetChild(indexInParent + 1);
-
-                if (rightBrother.KeyCount == a - 1) //cannot borrow key from brother, as it will underflow
-                {
-                    MergeWithRightBrother(indexInParent, rightBrother);
-                }
-                else
-                {
-                    BorrowKeyFromRight(rightBrother, indexInParent);
-                }
+                HandleUnderflowWithRightSibling(indexInParent);
             }
         }
 
+        /// <summary>
+        /// underflown node has a left sibling to borrow a key form or merge with.
+        /// </summary>
+        /// <param name="indexInParent">index in Parent.Children that leads to this node</param>
+        private void HandleUnderflowWithLeftSibling(int indexInParent)
+        {
+            var leftSibling = Parent.GetChild(indexInParent - 1);
+            if (leftSibling.KeyCount == a - 1)
+            {
+                MergeNodes(leftSibling, this, Parent.GetKeyRef(indexInParent - 1));
+            }
+            else
+            {
+                BorrowKeyFromLeft(leftSibling, indexInParent);
+            }
+        }
+
+        /// <summary>
+        /// underflown node has a right sibling to borrow a key form or merge with.
+        /// </summary>
+        /// <param name="indexInParent">index in Parent.Children that leads to this node</param>
+        private void HandleUnderflowWithRightSibling(int indexInParent)
+        {
+            var rightSibling = Parent.GetChild(indexInParent + 1);
+            if (rightSibling.KeyCount == a - 1)
+            {
+                MergeNodes(this, rightSibling, Parent.GetKeyRef(indexInParent));
+            }
+            else
+            {
+                BorrowKeyFromRight(rightSibling, indexInParent);
+            }
+        }
+
+        /// <summary>
+        /// rotation of keys to handle underflowing of a node.
+        /// this node gets parent's node and parent gets left sibling's key
+        /// </summary>
+        /// <param name="leftBrother">left sibling</param>
+        /// <param name="indexInParent">index in Parent.Children that leads to this node</param>
         internal void BorrowKeyFromLeft(ABNode<TKey> leftBrother, int indexInParent)
         {
             TKey brotherKey = leftBrother.GetKeyRef(leftBrother.KeyCount - 1);
-            TKey parentKey = parent.GetKeyRef(indexInParent - 1);
+            TKey ParentKey = Parent.GetKeyRef(indexInParent - 1);
+            ABNode<TKey> AdoptedKid = leftBrother.GetChild(leftBrother.KeyCount);
 
-            parent.GetKeys()[indexInParent - 1] = brotherKey;
-            leftBrother.n--;
+            Parent.Keys[indexInParent - 1] = brotherKey;
+            leftBrother._keyCount--;
 
-            for (int i = KeyCount; i < n; i++)
+            if(a > 2)
             {
-                keys[i+1] = keys[i];
+                _children[KeyCount] = _children[KeyCount - 1];
             }
 
-            keys[0] = parentKey;
-            n++;
+            for (int i = KeyCount - 1; i > 0; i++)
+            {
+                _keys[i] = _keys[i - 1];
+                _children[i] = Children[i - 1];
+            }
+
+            _children[0] = AdoptedKid;
+            _keys[0] = ParentKey;
+            _keyCount++;
         }
 
+        /// <summary>
+        /// rotation of keys to handle underflowing of a node.
+        /// this node gets parent's node and parent gets right sibling's key
+        /// </summary>
+        /// <param name="rightBrother">right sibling</param>
+        /// <param name="indexInParent">index in Parent.Children that leads to this node</param>
         internal void BorrowKeyFromRight(ABNode<TKey> rightBrother, int indexInParent)
         {
             TKey brotherKey = rightBrother.GetKeyRef(0);
-            TKey parentKey = parent.GetKeyRef(indexInParent);
+            TKey ParentKey = Parent.GetKeyRef(indexInParent);
+            ABNode<TKey> AdoptedKid = rightBrother.GetChild(0);
 
-            parent.GetKeys()[indexInParent] = brotherKey;
-            keys[n] = parentKey;
+            Parent.Keys[indexInParent] = brotherKey;
+            _keys[_keyCount] = ParentKey;
 
-            for (int i = rightBrother.KeyCount; i < n; i++)
+            for (int i = 0; i < rightBrother.KeyCount - 1; i++)
             {
-                rightBrother.keys[i + 1] = rightBrother.keys[i];
+                rightBrother._keys[i] = rightBrother._keys[i + 1];
+                rightBrother._children[i] = rightBrother._children[i + 1];
             }
 
-            rightBrother.n--;
-            n++;
+            rightBrother.Children[rightBrother.KeyCount - 1] = rightBrother.Children[rightBrother.KeyCount];
+            _children[_keyCount + 1] = AdoptedKid;
+            rightBrother._keyCount--;
+            _keyCount++;
         }
 
-        internal void MergeWithLeftBrother(int indexInParent, ABNode<TKey> leftBrother)
+        /// <summary>
+        /// merges two nodes
+        /// </summary>
+        /// <param name="left">left node</param>
+        /// <param name="right">right node</param>
+        /// <param name="parentKey">key in parent connecting them</param>
+        private void MergeNodes(ABNode<TKey> left, ABNode<TKey> right, TKey parentKey)
         {
-            TKey parentKey = parent.GetKeyRef(indexInParent - 1);
+            int offset = left.KeyCount;
 
-            ABNode<TKey> newNode = MergeNodes(leftBrother, this, parentKey);
-           
-            parent.DeleteKey(parentKey, newNode);
-        }
+            left._keys[offset] = parentKey;
+            for (int i = 0; i < right.KeyCount; i++)
+                left._keys[offset + 1 + i] = right._keys[i];
 
-        internal void MergeWithRightBrother(int indexInParent, ABNode<TKey> rightBrother)
-        {
-            TKey parentKey = parent.GetKeyRef(indexInParent);
-
-            ABNode<TKey> newNode = MergeNodes(this, rightBrother, parentKey);
-
-            parent.DeleteKey(parentKey, newNode);
-        }
-
-        private ABNode<TKey> MergeNodes(ABNode<TKey> firstNode, ABNode<TKey> secondNode, TKey middleValue)
-        {
-            ABNode<TKey> merged = new ABNode<TKey>(a, b);
-
-            if (firstNode.IsLeaf) { merged.leaf = true;}
-
-            for (int i = 0; i < firstNode.KeyCount; i++)
+            for (int i = 0; i <= right.KeyCount; i++)
             {
-                merged.keys[i] = firstNode.keys[i];
-                merged.children[i] = firstNode.children[i];
+                left._children[offset + 1 + i] = right._children[i];
+                if (left._children[offset + 1 + i] != null)
+                    left._children[offset + 1 + i].Parent = left;
             }
 
-            merged.children[firstNode.KeyCount] = firstNode.children[firstNode.KeyCount];
-            merged.keys[firstNode.KeyCount] = middleValue;
-
-            for (int i = 0; i < secondNode.KeyCount; i++)
-            {
-                merged.keys[i + firstNode.KeyCount + 1] = secondNode.keys[i];
-                merged.children[i + firstNode.KeyCount + 1] = secondNode.children[i];
-            }
-
-            merged.children[secondNode.KeyCount + firstNode.KeyCount + 1] = secondNode.children[secondNode.KeyCount];
-
-            merged.n = firstNode.KeyCount + secondNode.KeyCount + 1;
-
-            for(int i = 0; i <= merged.n; i++)
-            {
-                if(merged.children[i] != null)
-                {
-                    merged.children[i].parent = merged;
-                }
-            }
-
-            return merged;
+            left._keyCount += right.KeyCount + 1;
+            Parent.DeleteKey(parentKey, left);
         }
     }
 }

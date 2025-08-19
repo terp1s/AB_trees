@@ -11,6 +11,8 @@
     <Title>AB Tree library</Title>
     <Authors>Tereza Písková</Authors>
     <BaseOutputPath>C:\Users\pisko\Documents\NuGet</BaseOutputPath>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
   </PropertyGroup>
 
 </Project>
