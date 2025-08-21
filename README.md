@@ -16,5 +16,5 @@ Implemented methods are Insert, Delete, Find, FindMax, FindMin, PrintNodes.
 *Tady bude rozcestník k dokumentaci k vašemu programu. Pokud je to potřeba, upravte odkazy na soubory s dokumentací. Pokud dokumentaci nepíšete v Markdownu, uveďte zde, kde ji najdu (např. odkaz na PDF soubor).*
 
 * [Uživatelská dokumentace](docs/user.md)
-* [Ukázky použití](docs/examples.md)
-* [Programátorská dokumentace](docs/programmer.md)
+* [Ukázky použití](Examples/ExampleUse.cs)
+* [Programátorská dokumentace](docs/programmer.xml)
