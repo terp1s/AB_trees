@@ -1,41 +1,12 @@
-﻿using System;
-using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using ab_stromy;
 
-namespace ConsoleApp1
+namespace BenchmarkTest
 {
-    internal class ExampleProgram
+    internal class Program
     {
         static void Main(string[] args)
         {
-            //create tree with (a,b) tuple. Please follow restricitons that b >= 2a - 2 and a >= 2
-            ABTree<int> tree = new ABTree<int>(2, 3);
-
-            int[] keys = { 1, 5, 2, 9, 10, 8, 3};
-
-            // |2 3| is example of one node
-            // || |1| |2 3| || is example of two children of one node
-
-            foreach (int key in keys)
-            {
-                tree.Insert(key);
-                Console.WriteLine("Inserting " + key + ":");
-                tree.PrintNodes();
-                Console.WriteLine();
-            }
-
-            Console.WriteLine("Min: " + tree.FindMin());
-            Console.WriteLine("Max: " + tree.FindMax() + "\n");
-
-            foreach (int key in keys)
-            {
-                tree.Delete(key);
-                Console.WriteLine("Deleting " + key + ":");
-                tree.PrintNodes();
-                Console.WriteLine();
-            }
-
             // Time comparison with a list
 
             BenchmarkTest(10000);
@@ -57,30 +28,36 @@ namespace ConsoleApp1
             List<int> list = shuffledArray.ToList();
             ABTree<int> tree2 = new ABTree<int>(2, 3);
 
-            var listInsertTime = Measure(() => {
+            var listInsertTime = Measure(() =>
+            {
                 foreach (int key in shuffledArray) list.Add(key);
             });
 
-            var treeInsertTime = Measure(() => {
+            var treeInsertTime = Measure(() =>
+            {
                 foreach (int key in shuffledArray) tree2.Insert(key);
             });
 
-            var treeFindTime = Measure(() => {
+            var treeFindTime = Measure(() =>
+            {
                 var tree = new ABTree<int>(2, 3);
                 foreach (int key in timeKeys) tree.Find(key);
             });
 
-            var listFindTime = Measure(() => {
+            var listFindTime = Measure(() =>
+            {
                 var tree = new ABTree<int>(2, 3);
                 foreach (int key in timeKeys) list.IndexOf(key);
             });
 
-            var treeDeleteTime = Measure(() => {
+            var treeDeleteTime = Measure(() =>
+            {
                 var tree = new ABTree<int>(2, 3);
                 foreach (int key in timeKeys) tree.Delete(key);
             });
 
-            var listDeleteTime = Measure(() => {
+            var listDeleteTime = Measure(() =>
+            {
                 var tree = new ABTree<int>(2, 3);
                 foreach (int key in timeKeys) list.Remove(key);
             });
@@ -111,7 +88,7 @@ namespace ConsoleApp1
 
         static void PrintBenchmark(string name, TimeSpan insert, TimeSpan find, TimeSpan delete)
         {
-            Console.WriteLine("{0,-9} | {1,9} | {2,9}| {3,9}",name,  insert.TotalMilliseconds, find.TotalMilliseconds, delete.TotalMilliseconds);
+            Console.WriteLine("{0,-9} | {1,9} | {2,9}| {3,9}", name, insert.TotalMilliseconds, find.TotalMilliseconds, delete.TotalMilliseconds);
         }
     }
 }

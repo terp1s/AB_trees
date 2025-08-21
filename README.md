@@ -1,19 +1,20 @@
-Library and a NuGet package that implements an (a,b)-tree with generic key
+# Zápočtový program: (a,b)-tree
 
 
-Methods to use:
+## Specification
 
-Insert(key) - inserts key into tree and balances it
+This library implements an (a,b)- tree. This is a library and a NuGet package that implements an (a,b)-tree with generic key of user's choice - as long as it derives from the IEnumerable interface.
+(a,b)-tree is a data structure made up of nodes.
+Each node (except for the root) has to have at least a children and maximum of b children. Root has to have at least two children and maximum of b  children. 
+Implemented methods are Insert, Delete, Find, FindMax, FindMin, PrintNodes.
 
-Delete(key) - deletes key from tree and balances it
-
-Find(key) - find key in tree, or returns null if its not there
-
-FindMin(key) - finds key with minimal value
-
-FindMax(key) - finds key with maximal value
-
-PrintNodes() - printing of tree
+## Instalace a spuštění
 
 
-In ExampleProgram.cs there is shown how to use those methods, alongside comparison of time complexity with respect to a list already implemented.
+## Dokumentace
+
+*Tady bude rozcestník k dokumentaci k vašemu programu. Pokud je to potřeba, upravte odkazy na soubory s dokumentací. Pokud dokumentaci nepíšete v Markdownu, uveďte zde, kde ji najdu (např. odkaz na PDF soubor).*
+
+* [Uživatelská dokumentace](docs/user.md)
+* [Ukázky použití](docs/examples.md)
+* [Programátorská dokumentace](docs/programmer.md)
