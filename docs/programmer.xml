@@ -1,0 +1,186 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ab_stromy</name>
+    </assembly>
+    <members>
+        <member name="T:ab_stromy.ABNode`1">
+            <summary>
+            node of an (a,b)-tree
+            </summary>
+            <typeparam name="TKey">data type of keys</typeparam>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.#ctor(System.Int32,System.Int32,System.Boolean)">
+            <summary>
+            constructor
+            </summary>
+            <param name="minChildren">minimum amount of children</param>
+            <param name="maxChildren">maximum amount of children</param>
+            <param name="isLeaf"></param>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.Overflow">
+            <summary>
+            handles node overflowing - amount of children exceeds b
+            splits node in half and propagates key upwards, until nodes stop overflowing or a new root is created
+            </summary>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.SplitRightHalf(System.Int32)">
+            <summary>
+            splits node in half, including children, if it has any
+            </summary>
+            <param name="splitIndex">index where node is to be split</param>
+            <returns>node that contains the second "half" of the given node</returns>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.Print">
+            <summary>
+            prints keys of a node, seperated by a space
+            example of a printed key: |5 10|
+            </summary>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.InsertKey(`0,ab_stromy.ABNode{`0},ab_stromy.ABNode{`0})">
+            <summary>
+            inserts key into a node
+            </summary>
+            <param name="key">key to be inserted</param>
+            <param name="leftChild">new left child of the key</param>
+            <param name="rightChild">new right child of the key</param>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.DeleteKey(`0,ab_stromy.ABNode{`0})">
+            <summary>
+            deletes key from node
+            </summary>
+            <param name="key">key to delete</param>
+            <param name="newNode">new child to replace two children associated with the deleted node</param>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.FindClosestIndex(`0)">
+            <summary>
+            finds either index where given key is, or should be, depending if it is in the node or not.
+            </summary>
+            <param name="key">key to be found</param>
+            <returns>index of the supposed place of the key</returns>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.HandleUnderflow(System.Int32)">
+            <summary>
+            handles underflowing of a key - node has less children than a
+            </summary>
+            <param name="indexInParent">index in Parent.Children that leads to this node</param>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.HandleUnderflowWithLeftSibling(System.Int32)">
+            <summary>
+            underflown node has a left sibling to borrow a key form or merge with.
+            </summary>
+            <param name="indexInParent">index in Parent.Children that leads to this node</param>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.HandleUnderflowWithRightSibling(System.Int32)">
+            <summary>
+            underflown node has a right sibling to borrow a key form or merge with.
+            </summary>
+            <param name="indexInParent">index in Parent.Children that leads to this node</param>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.BorrowKeyFromLeft(ab_stromy.ABNode{`0},System.Int32)">
+            <summary>
+            rotation of keys to handle underflowing of a node.
+            this node gets parent's node and parent gets left sibling's key
+            </summary>
+            <param name="leftBrother">left sibling</param>
+            <param name="indexInParent">index in Parent.Children that leads to this node</param>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.BorrowKeyFromRight(ab_stromy.ABNode{`0},System.Int32)">
+            <summary>
+            rotation of keys to handle underflowing of a node.
+            this node gets parent's node and parent gets right sibling's key
+            </summary>
+            <param name="rightBrother">right sibling</param>
+            <param name="indexInParent">index in Parent.Children that leads to this node</param>
+        </member>
+        <member name="M:ab_stromy.ABNode`1.MergeNodes(ab_stromy.ABNode{`0},ab_stromy.ABNode{`0},`0)">
+            <summary>
+            merges two nodes
+            </summary>
+            <param name="left">left node</param>
+            <param name="right">right node</param>
+            <param name="parentKey">key in parent connecting them</param>
+        </member>
+        <member name="T:ab_stromy.ABTree`1">
+            <summary>
+            (a,b)-tree
+            </summary>
+            <typeparam name="TKey">data type of keys</typeparam>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.#ctor(System.Int32,System.Int32)">
+            <summary>
+            constructor
+            </summary>
+            <param name="a">minimum amount of children per node</param>
+            <param name="b">maximum amount of children per node</param>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.Find(`0)">
+            <summary>
+            finds node with given key
+            </summary>
+            <param name="key">key to find</param>
+            <returns>node with the key, if it is in tree, null otherwise</returns>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.Insert(`0)">
+            <summary>
+            inserts key into the tree
+            </summary>
+            <param name="key">key to insert</param>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.FindLeaf(ab_stromy.ABNode{`0},`0)">
+            <summary>
+            finds leaf where key is supposed to go
+            </summary>
+            <param name="node">root of subtree that key is to be found</param>
+            <param name="key">key to be found</param>
+            <returns>leaf node containing the key</returns>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.Delete(`0)">
+            <summary>
+            deletes given key from tree
+            </summary>
+            <param name="key">key for deletion</param>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.DeleteInternal(ab_stromy.ABNode{`0},`0)">
+            <summary>
+            handles deletion if tree has more than 1 level
+            </summary>
+            <param name="node">node containing the key</param>
+            <param name="key">key for deletion</param>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.FixUnderflow(ab_stromy.ABNode{`0},System.Int32)">
+            <summary>
+            checks if node has underflown and fixes it
+            </summary>
+            <param name="node">node suspicious of underflowing</param>
+            <param name="indexInParent">index in Parent.Children that refers to the node</param>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.FindSuccessor(ab_stromy.ABNode{`0},System.Int32)">
+            <summary>
+            Finds node that contains the successor of a key at _keys[index]
+            </summary>
+            <param name="node">node with the key</param>
+            <param name="index">index of the key</param>
+            <returns>node with the key successor</returns>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.FindMin">
+            <summary>
+            Finds key of minimal value
+            </summary>
+            <returns>minimum of keys</returns>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.FindMax">
+            <summary>
+            Finds maximum of keys
+            </summary>
+            <returns>maximum of keys</returns>
+        </member>
+        <member name="M:ab_stromy.ABTree`1.PrintNodes">
+            <summary>
+            prints tree. Each line contains nodes on the same level
+            one node is represented for example as |2 5 10|
+            children of one node are represented for example as || |2| |5 10| ||
+            </summary>
+        </member>
+    </members>
+</doc>

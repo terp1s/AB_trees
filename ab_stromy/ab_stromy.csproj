@@ -12,6 +12,7 @@
     <Authors>Tereza Písková</Authors>
     <BaseOutputPath>C:\Users\pisko\Documents\NuGet</BaseOutputPath>
   <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  <DocumentationFile>C:\Users\pisko\source\repos\ab_stromy\docs\programmer.xml</DocumentationFile>
 
   </PropertyGroup>
 
